@@ -21,6 +21,8 @@ type
     procedure ButtonExtractClick(Sender: TObject);
     procedure ButtonLoadClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
+
+    procedure Preprocessing();
   private
 
   public
@@ -65,20 +67,48 @@ begin
       B := GetBValue(ImageInput.Canvas.Pixels[i,j]);
 
       BmpGray[i,j] := (R + G + B) div 3;
-
-//      thresholding nilai biner
-      if BmpGray[i,j] > 127
-      then
-        BmpBinary[i,j] := 1
-      else
-        BmpBinary[i,j] := 0;
     end;
   end;
 end;
 
 procedure TFormMain.ButtonExtractClick(Sender: TObject);
 begin
+  Preprocessing();
+end;
 
+procedure TFormMain.Preprocessing();   
+var
+  i, j, R, G, B : integer;
+  k,ki,kj : integer;
+  BmpTemp : array[0..1000,0..1000] of integer;
+  SmoothingFilter : array[0..2,0..2] of single = ((1/9,1/9,1/9),(1/9,1/9,1/9),(1/9,1/9,1/9));
+begin
+
+  for i:=1 to ImageInput.Width-2 do
+  begin
+    for j:=1 to ImageInput.Height-2 do
+    begin
+      k:=0;
+
+      for ki:=0 to 2 do
+      begin
+        for kj:=0 to 2 do
+        begin
+          k := round(k + BmpGray[i+ki-1,j+kj-1] * SmoothingFilter[ki,kj]);
+        end;
+      end;
+
+      BmpTemp[i,j] := k;
+
+      if BmpTemp[i,j] > 127
+      then
+        BmpBinary[i,j] := 1
+      else
+        BmpBinary[i,j] := 0;
+
+      ImageInput.Canvas.Pixels[i,j] := RGB(BmpBinary[i,j]*255, BmpBinary[i,j]*255, BmpBinary[i,j]*255);
+    end;
+  end;
 end;
 
 end.

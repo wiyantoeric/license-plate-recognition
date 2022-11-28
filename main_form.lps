@@ -20,14 +20,14 @@
         <ComponentName Value="FormMain"/>
         <ResourceBaseClass Value="Form"/>
         <IsVisibleTab Value="True"/>
-        <TopLine Value="62"/>
-        <CursorPos X="5" Y="77"/>
+        <TopLine Value="77"/>
+        <CursorPos X="33" Y="87"/>
         <UsageCount Value="20"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit1>
     </Units>
-    <JumpHistory Count="12" HistoryIndex="11">
+    <JumpHistory Count="13" HistoryIndex="12">
       <Position1>
         <Filename Value="main.pas"/>
         <Caret Line="17" Column="37"/>
@@ -76,6 +76,10 @@
         <Filename Value="main.pas"/>
         <Caret Line="41" TopLine="29"/>
       </Position12>
+      <Position13>
+        <Filename Value="main.pas"/>
+        <Caret Line="108" Column="7" TopLine="97"/>
+      </Position13>
     </JumpHistory>
     <RunParams>
       <FormatVersion Value="2"/>
