@@ -80,13 +80,13 @@ procedure TFormMain.Preprocessing();
 var
   i, j, R, G, B : integer;
   k,ki,kj : integer;
-  bmpnew : array[0..1000,0..1000] of integer;
-  smoothingFilter : array[0..2,0..2] of single = ((1/9,1/9,1/9),(1/9,1/9,1/9),(1/9,1/9,1/9));
+  BmpTemp : array[0..1000,0..1000] of integer;
+  SmoothingFilter : array[0..2,0..2] of single = ((1/9,1/9,1/9),(1/9,1/9,1/9),(1/9,1/9,1/9));
 begin
 
-  for i:=0 to ImageInput.Width-1 do
+  for i:=1 to ImageInput.Width-2 do
   begin
-    for j:=0 to ImageInput.Height-1 do
+    for j:=1 to ImageInput.Height-2 do
     begin
       k:=0;
 
@@ -94,26 +94,19 @@ begin
       begin
         for kj:=0 to 2 do
         begin
-          k := round(k + bmpgray[i+ki-1,j+kj-1] * smoothingFilter[ki,kj]);
-
+          k := round(k + BmpGray[i+ki-1,j+kj-1] * SmoothingFilter[ki,kj]);
         end;
       end;
 
-      bmpnew[i,j] := k;
-////      thresholding nilai biner
-//      if BmpGray[i,j] > 127
-//      then
-//        BmpBinary[i,j] := 1
-//      else
-//        BmpBinary[i,j] := 0;
-      if bmpnew[i,j] > 127
+      BmpTemp[i,j] := k;
+
+      if BmpTemp[i,j] > 127
       then
         BmpBinary[i,j] := 1
       else
         BmpBinary[i,j] := 0;
 
-      ImageInput.canvas.pixels[i,j] := RGB(bmpbinary[i,j]*255,bmpbinary[i,j]*255,bmpbinary[i,j]*255);
-      //ImageInput.canvas.pixels[i,j] := RGB(bmpnew[i,j],bmpnew[i,j],bmpnew[i,j]);
+      ImageInput.Canvas.Pixels[i,j] := RGB(BmpBinary[i,j]*255, BmpBinary[i,j]*255, BmpBinary[i,j]*255);
     end;
   end;
 end;

@@ -51,7 +51,7 @@ end;
 
 procedure TFormMain.ButtonLoadClick(Sender: TObject);
 var
-  i, j, R, G, B : integer;
+  i, j, R, G, B : Integer;
 begin
   if (OpenPictureDialog1.Execute) then
   begin
@@ -78,10 +78,9 @@ end;
 
 procedure TFormMain.Preprocessing();   
 var
-  i, j, R, G, B : integer;
-  k,ki,kj : integer;
-  BmpTemp : array[0..1000,0..1000] of integer;
-  SmoothingFilter : array[0..2,0..2] of single = ((1/9,1/9,1/9),(1/9,1/9,1/9),(1/9,1/9,1/9));
+  i, j, k, ki, kj : Integer;
+  BmpTemp : Array[0..1000,0..1000] of Integer;
+  SmoothingFilter : Array[0..2,0..2] of Single = ((1/9,1/9,1/9),(1/9,1/9,1/9),(1/9,1/9,1/9));
 begin
 
   for i:=1 to ImageInput.Width-2 do
@@ -109,6 +108,7 @@ begin
       ImageInput.Canvas.Pixels[i,j] := RGB(BmpBinary[i,j]*255, BmpBinary[i,j]*255, BmpBinary[i,j]*255);
     end;
   end;
+
 end;
 
 end.

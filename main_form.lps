@@ -20,8 +20,8 @@
         <ComponentName Value="FormMain"/>
         <ResourceBaseClass Value="Form"/>
         <IsVisibleTab Value="True"/>
-        <TopLine Value="77"/>
-        <CursorPos X="33" Y="87"/>
+        <TopLine Value="91"/>
+        <CursorPos X="3" Y="111"/>
         <UsageCount Value="20"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
