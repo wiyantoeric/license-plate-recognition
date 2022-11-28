@@ -5,10 +5,20 @@ unit main;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs;
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
+  ExtDlgs;
 
 type
+
+  { TForm1 }
+
   TForm1 = class(TForm)
+    ButtonLoad: TButton;
+    ButtonExtract: TButton;
+    ImageInput: TImage;
+    LabelOutput: TLabel;
+    OpenPictureDialog1: TOpenPictureDialog;
+    procedure FormCreate(Sender: TObject);
   private
 
   public
@@ -21,6 +31,13 @@ var
 implementation
 
 {$R *.lfm}
+
+{ TForm1 }
+
+procedure TForm1.FormCreate(Sender: TObject);
+begin
+  LabelOutput.Visible := false;
+end;
 
 end.
 
