@@ -35,6 +35,10 @@ implementation
 {$R *.lfm}
 
 { TFormMain }
+
+uses
+  windows;
+
 var
   BmpGray, BmpBinary : array[0..1000, 0..1000] of integer;
 
@@ -44,6 +48,8 @@ begin
 end;
 
 procedure TFormMain.ButtonLoadClick(Sender: TObject);
+var
+  i, j, R, G, B : integer;
 begin
   if (OpenPictureDialog1.Execute) then
   begin
@@ -68,7 +74,6 @@ begin
         BmpBinary[i,j] := 0;
     end;
   end;
-end;
 end;
 
 procedure TFormMain.ButtonExtractClick(Sender: TObject);
