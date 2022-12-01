@@ -19,9 +19,9 @@ object FormMain: TFormMain
     TabOrder = 0
   end
   object ButtonExtract: TButton
-    Left = 42
+    Left = 40
     Height = 31
-    Top = 81
+    Top = 80
     Width = 94
     Caption = 'Run'
     OnClick = ButtonExtractClick
@@ -35,12 +35,30 @@ object FormMain: TFormMain
     AutoSize = True
   end
   object LabelOutput: TLabel
-    Left = 42
+    Left = 40
     Height = 20
-    Top = 176
+    Top = 224
     Width = 82
     Caption = 'LabelOutput'
     ParentColor = False
+  end
+  object RadioBlack: TRadioButton
+    Left = 40
+    Height = 24
+    Top = 144
+    Width = 59
+    Caption = 'Black'
+    Checked = True
+    TabOrder = 3
+    TabStop = True
+  end
+  object RadioWhite: TRadioButton
+    Left = 40
+    Height = 24
+    Top = 176
+    Width = 63
+    Caption = 'White'
+    TabOrder = 2
   end
   object OpenPictureDialog1: TOpenPictureDialog
     Top = 434

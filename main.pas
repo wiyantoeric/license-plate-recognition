@@ -18,11 +18,15 @@ type
     ImageInput: TImage;
     LabelOutput: TLabel;
     OpenPictureDialog1: TOpenPictureDialog;
+    RadioBlack: TRadioButton;
+    RadioWhite: TRadioButton;
     procedure ButtonExtractClick(Sender: TObject);
     procedure ButtonLoadClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
 
     procedure Preprocessing();
+    procedure Segmentasi();
+    procedure SegmentasiHuruf();
   private
 
   public
@@ -41,8 +45,21 @@ implementation
 uses
   windows;
 
+
+type
+  Obj = Record
+    Xpos, Ypos : Integer;
+    Width, Height : Integer;
+    Population : Array[0..3,0..3] of Single;
+    PopSum : Single;
+  end;
+
 var
-  BmpGray, BmpBinary : array[0..1000, 0..1000] of integer;
+  BmpGray, BmpBiner : Array[0..1000, 0..1000] of integer;
+  Objects : Array[0..7] of Obj;
+  ObjCount : Integer = 0;
+  MainFeature : Single;
+  MainObject : Obj;
 
 procedure TFormMain.FormCreate(Sender: TObject);
 begin
@@ -69,6 +86,34 @@ begin
       BmpGray[i,j] := (R + G + B) div 3;
     end;
   end;
+
+
+  for i:=0 to ImageInput.Width-1 do
+  begin
+    for j:=0 to ImageInput.Height-1 do
+    begin
+      if (i = 0) or (j = 0) or (i = ImageInput.width-1) or (j = ImageInput.height-1) then
+      begin
+        if i = 0 then
+        begin
+          BmpGray[i-1,j] := BmpGray[i,j];
+        end;
+        if j = 0 then
+        begin
+          BmpGray[i,j-1] := BmpGray[i,j];
+        end;
+        if i = ImageInput.width-1 then
+        begin
+          BmpGray[i+1,j] := BmpGray[i,j];
+        end;
+        if j = ImageInput.height-1 then
+        begin
+          BmpGray[i,j+1] := BmpGray[i,j];
+        end;
+      end;
+    end;
+    end;
+
 end;
 
 procedure TFormMain.ButtonExtractClick(Sender: TObject);
@@ -76,16 +121,15 @@ begin
   Preprocessing();
 end;
 
-procedure TFormMain.Preprocessing();   
+procedure TFormMain.Preprocessing();
 var
   i, j, k, ki, kj : Integer;
-  BmpTemp : Array[0..1000,0..1000] of Integer;
+  BmpTemp : Array[-1..1000,-1..1000] of Integer;
   SmoothingFilter : Array[0..2,0..2] of Single = ((1/9,1/9,1/9),(1/9,1/9,1/9),(1/9,1/9,1/9));
 begin
-
-  for i:=1 to ImageInput.Width-2 do
+  for i:=0 to ImageInput.Width-1 do
   begin
-    for j:=1 to ImageInput.Height-2 do
+    for j:=0 to ImageInput.Height-1 do
     begin
       k:=0;
 
@@ -101,14 +145,151 @@ begin
 
       if BmpTemp[i,j] > 127
       then
-        BmpBinary[i,j] := 1
+        BmpBiner[i,j] := 1
       else
-        BmpBinary[i,j] := 0;
+        BmpBiner[i,j] := 0;
 
-      ImageInput.Canvas.Pixels[i,j] := RGB(BmpBinary[i,j]*255, BmpBinary[i,j]*255, BmpBinary[i,j]*255);
+      ImageInput.Canvas.Pixels[i,j] := RGB(BmpBiner[i,j]*255, BmpBiner[i,j]*255, BmpBiner[i,j]*255);
     end;
   end;
 
+  Segmentasi();
+  SegmentasiHuruf();
+end;
+
+procedure TFormMain.Segmentasi();
+var
+  i, j : Integer;
+  TepiAtas, TepiBawah, TepiKiri, TepiKanan, ObjectWidth, ObjectHeight : Integer;
+label
+  labelAtas, labelKanan, labelBawah, labelDraw;
+begin
+    for i:=0 to ImageInput.Width-1 do
+    begin
+      for j:=0 to ImageInput.Height-1 do
+      begin
+        if (BmpBiner[i,j] = 0) then
+        begin
+          TepiKiri := i;
+          goto LabelAtas;
+        end;
+      end;
+    end;
+
+//    tepi atas
+    LabelAtas:
+    for i:=0 to ImageInput.height-1 do
+    begin
+      for j:=0 to ImageInput.width-1 do
+      begin
+        if (BmpBiner[j,i] = 0) then
+        begin
+          TepiAtas := i;
+          goto LabelKanan;
+        end;
+      end;
+    end;
+
+//    tepi kanan
+    LabelKanan:
+    i:=ImageInput.width-1;
+    while i >= 0 do
+    begin
+      for j:=0 to ImageInput.Height-1 do
+      begin
+        if (BmpBiner[i,j] = 0) then
+        begin
+          TepiKanan := i;
+          goto LabelBawah;
+        end;
+      end;
+      i := i-1;
+    end;
+
+//    tepi bawah
+    LabelBawah:
+    i:=ImageInput.height-1;
+    while i >= 0 do
+    begin
+      j:=ImageInput.width-1;
+      while j >= 0 do
+      begin
+        if (BmpBiner[j,i] = 0) then
+        begin
+          TepiBawah := i;
+          goto LabelDraw;
+        end;
+        j := j-1;
+      end;
+      i := i-1;
+    end;
+
+    LabelDraw:
+
+    ObjectWidth := TepiKanan - TepiKiri;
+    ObjectHeight := TepiBawah - TepiAtas;
+
+    ImageInput.Canvas.Pen.Color := ClRed;
+
+    ImageInput.Canvas.MoveTo(TepiKiri, TepiAtas);
+    ImageInput.Canvas.LineTo(TepiKanan, TepiAtas);
+    ImageInput.Canvas.LineTo(TepiKanan, TepiBawah);
+    ImageInput.Canvas.LineTo(TepiKiri, TepiBawah);
+    ImageInput.Canvas.LineTo(TepiKiri, TepiAtas);
+
+    MainObject.Xpos := TepiKiri;
+    MainObject.Ypos := TepiAtas;
+    MainObject.Width := ObjectWidth;
+    MainObject.Height := ObjectHeight;
+end;
+
+procedure TFormMain.SegmentasiHuruf();
+var
+  i, j : Integer;
+  BlackCount : Array[0..1000] of  Integer;
+begin
+  for i := MainObject.Xpos to MainObject.Xpos + MainObject.Width do
+  begin
+    BlackCount[i] := 0;
+
+    for j := MainObject.Ypos to MainObject.Ypos + MainObject.Height do
+    begin
+      if (BmpBiner[i,j] = 0) then Inc(BlackCount[i]);
+
+      //if BmpBiner[i-1,j] = 1 then
+      //begin
+        //Inc(ObjCount);
+        //Objects[ObjCount-1].Xpos := i;
+        //Objects[ObjCount-1].Ypos := j;
+      //end;
+
+//      awal object
+      if (j = MainObject.Height) and (BlackCount[i] <> 0) and (BlackCount[i-1] = 0) then
+      begin
+        Inc(ObjCount);
+        Objects[ObjCount-1].Xpos := i;
+        Objects[ObjCount-1].Ypos := MainObject.Ypos;
+      end;
+
+      if (j = MainObject.Height) and (BlackCount[i] = 0) and (BlackCount[i-1] <> 0) then
+      begin
+        Objects[ObjCount-1].Width := i - Objects[ObjCount-1].Xpos;
+        Objects[ObjCount-1].Height := MainObject.Height;
+      end;
+
+    end;
+  end;
+
+  for i := 0 to ObjCount-1 do
+  begin
+    ImageInput.Canvas.Pen.Color := ClRed;
+
+    ImageInput.Canvas.MoveTo(Objects[i].Xpos, Objects[i].Ypos);
+    ImageInput.Canvas.LineTo(Objects[i].Xpos + Objects[i].Width, Objects[i].Ypos);
+    ImageInput.Canvas.LineTo(Objects[i].Xpos + Objects[i].Width, Objects[i].Ypos + Objects[i].Height);
+    ImageInput.Canvas.LineTo(Objects[i].Xpos, Objects[i].Ypos + Objects[i].Height);
+    ImageInput.Canvas.LineTo(Objects[i].Xpos, Objects[i].Ypos);
+  end;
 end;
 
 end.
