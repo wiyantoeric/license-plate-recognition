@@ -16,6 +16,8 @@ type
     ButtonLoad: TButton;
     ButtonExtract: TButton;
     ImageInput: TImage;
+    Label1: TLabel;
+    Label2: TLabel;
     LabelOutput: TLabel;
     OpenPictureDialog1: TOpenPictureDialog;
     RadioBlack: TRadioButton;
@@ -64,6 +66,7 @@ var
 procedure TFormMain.FormCreate(Sender: TObject);
 begin
   LabelOutput.Visible := False;
+  ObjCount := 0;
 end;
 
 procedure TFormMain.ButtonLoadClick(Sender: TObject);
@@ -161,8 +164,9 @@ procedure TFormMain.Segmentasi();
 var
   i, j : Integer;
   TepiAtas, TepiBawah, TepiKiri, TepiKanan, ObjectWidth, ObjectHeight : Integer;
+
 label
-  labelAtas, labelKanan, labelBawah, labelDraw;
+  LabelAtas, LabelKanan, LabelBawah, LabelDraw;
 begin
     for i:=0 to ImageInput.Width-1 do
     begin
@@ -229,14 +233,6 @@ begin
     ObjectWidth := TepiKanan - TepiKiri;
     ObjectHeight := TepiBawah - TepiAtas;
 
-    ImageInput.Canvas.Pen.Color := ClRed;
-
-    ImageInput.Canvas.MoveTo(TepiKiri, TepiAtas);
-    ImageInput.Canvas.LineTo(TepiKanan, TepiAtas);
-    ImageInput.Canvas.LineTo(TepiKanan, TepiBawah);
-    ImageInput.Canvas.LineTo(TepiKiri, TepiBawah);
-    ImageInput.Canvas.LineTo(TepiKiri, TepiAtas);
-
     MainObject.Xpos := TepiKiri;
     MainObject.Ypos := TepiAtas;
     MainObject.Width := ObjectWidth;
@@ -245,8 +241,12 @@ end;
 
 procedure TFormMain.SegmentasiHuruf();
 var
-  i, j : Integer;
+  i, j, obji, objj : Integer;
+  TepiAtas, TepiBawah : Integer;
   BlackCount : Array[0..1000] of  Integer;
+
+label
+  LabelBawah, LabelEnd , LabelBawah2, LabelEnd2;
 begin
   for i := MainObject.Xpos to MainObject.Xpos + MainObject.Width do
   begin
@@ -264,19 +264,94 @@ begin
       //end;
 
 //      awal object
-      if (j = MainObject.Height) and (BlackCount[i] <> 0) and (BlackCount[i-1] = 0) then
+      if (j = MainObject.Ypos + MainObject.Height) and (BlackCount[i] <> 0) and (BlackCount[i-1] = 0) then
       begin
         Inc(ObjCount);
         Objects[ObjCount-1].Xpos := i;
         Objects[ObjCount-1].Ypos := MainObject.Ypos;
       end;
 
-      if (j = MainObject.Height) and (BlackCount[i] = 0) and (BlackCount[i-1] <> 0) then
+//      akhir object
+      if (j = MainObject.Ypos + MainObject.Height) and (BlackCount[i] = 0) and (BlackCount[i-1] <> 0) then
       begin
         Objects[ObjCount-1].Width := i - Objects[ObjCount-1].Xpos;
         Objects[ObjCount-1].Height := MainObject.Height;
+
+        for obji := MainObject.Ypos to MainObject.Ypos + Objects[ObjCount-1].Height do
+        begin
+          for objj := Objects[ObjCount-1].Xpos to Objects[ObjCount-1].Xpos + Objects[ObjCount-1].Width do
+          begin
+            if (BmpBiner[objj,obji] = 0) then
+            begin
+              TepiAtas := obji;
+              goto LabelBawah;
+            end;
+          end;
+        end;
+
+        LabelBawah:
+        obji := MainObject.Ypos + MainObject.Height;
+        while obji >= TepiAtas do
+        begin
+          objj := Objects[ObjCount-1].Xpos + Objects[ObjCount-1].Width;
+          while objj >= Objects[ObjCount-1].Xpos do
+          begin
+            if (BmpBiner[objj,obji] = 0) then
+            begin
+              TepiBawah := obji;
+              goto LabelEnd;
+            end;
+            objj := objj-1;
+          end;
+          obji := obji-1;
+        end;  
+
+        LabelEnd:
+
+        Objects[ObjCount-1].Ypos := TepiAtas;
+        Objects[ObjCount-1].Height := TepiBawah - TepiAtas;
       end;
 
+//      akhir object pada tepi kanan main object
+      if (i = MainObject.Xpos + MainObject.Width) and (j = MainObject.Ypos + MainObject.Height) and (BlackCount[i] <> 0) then
+      begin
+        Objects[ObjCount-1].Width := i - Objects[ObjCount-1].Xpos;
+        Objects[ObjCount-1].Height := MainObject.Height;
+
+        for obji := MainObject.Ypos to MainObject.Ypos + MainObject.Height do
+        begin
+          for objj := Objects[ObjCount-1].Xpos to Objects[ObjCount-1].Xpos + Objects[ObjCount-1].Width do
+          begin
+            if (BmpBiner[objj,obji] = 0) then
+            begin
+              TepiAtas := obji;
+              goto LabelBawah2;
+            end;
+          end;
+        end;
+
+        LabelBawah2:
+        obji := Objects[ObjCount-1].Height + TepiAtas;
+        while obji >= TepiAtas do
+        begin
+          objj := Objects[ObjCount-1].Xpos + Objects[ObjCount-1].Width;
+          while objj >= Objects[ObjCount-1].Xpos do
+          begin
+            if (BmpBiner[objj,obji] = 0) then
+            begin
+              TepiBawah := obji;
+              goto LabelEnd2;
+            end;
+            objj := objj-1;
+          end;
+          obji := obji-1;
+        end;
+
+        LabelEnd2:
+
+        Objects[ObjCount-1].Ypos := TepiAtas;
+        Objects[ObjCount-1].Height := TepiBawah - TepiAtas;
+      end;
     end;
   end;
 
