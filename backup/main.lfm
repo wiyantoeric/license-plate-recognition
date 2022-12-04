@@ -1,11 +1,11 @@
 object FormMain: TFormMain
   Left = 316
-  Height = 468
+  Height = 661
   Top = 180
-  Width = 975
+  Width = 1411
   Caption = 'Pengenalan Plat Nomor Kendaraan'
-  ClientHeight = 468
-  ClientWidth = 975
+  ClientHeight = 661
+  ClientWidth = 1411
   DesignTimePPI = 120
   OnCreate = FormCreate
   LCLVersion = '2.0.12.0'
@@ -18,13 +18,13 @@ object FormMain: TFormMain
     OnClick = ButtonLoadClick
     TabOrder = 0
   end
-  object ButtonExtract: TButton
+  object ButtonRun: TButton
     Left = 40
     Height = 31
     Top = 80
     Width = 94
     Caption = 'Run'
-    OnClick = ButtonExtractClick
+    OnClick = ButtonRunClick
     TabOrder = 1
   end
   object ImageInput: TImage
@@ -60,39 +60,143 @@ object FormMain: TFormMain
     Caption = 'White'
     TabOrder = 2
   end
+  object Memo1: TMemo
+    Left = 568
+    Height = 113
+    Top = 323
+    Width = 188
+    Lines.Strings = (
+      'Memo1'
+    )
+    TabOrder = 4
+  end
+  object Memo2: TMemo
+    Left = 784
+    Height = 113
+    Top = 320
+    Width = 188
+    Lines.Strings = (
+      'Memo1'
+    )
+    TabOrder = 5
+  end
+  object ButtonInsert: TButton
+    Left = 1200
+    Height = 31
+    Top = 400
+    Width = 94
+    Caption = 'Insert SQL'
+    OnClick = ButtonInsertClick
+    TabOrder = 6
+  end
+  object Memo3: TMemo
+    Left = 1000
+    Height = 113
+    Top = 320
+    Width = 188
+    Lines.Strings = (
+      'Memo1'
+    )
+    TabOrder = 7
+  end
+  object ButtonAddLetter: TButton
+    Left = 1200
+    Height = 31
+    Top = 360
+    Width = 94
+    Caption = 'Add'
+    OnClick = ButtonAddLetterClick
+    TabOrder = 8
+  end
+  object EditLabel: TEdit
+    Left = 1200
+    Height = 28
+    Top = 323
+    Width = 100
+    TabOrder = 9
+    Text = 'A'
+  end
   object Label1: TLabel
-    Left = 241
+    Left = 568
     Height = 20
-    Top = 186
+    Top = 453
     Width = 44
     Caption = 'Label1'
     ParentColor = False
   end
+  object Button1: TButton
+    Left = 733
+    Height = 31
+    Top = 532
+    Width = 94
+    Caption = 'Button1'
+    OnClick = Button1Click
+    TabOrder = 10
+  end
+  object ButtonRead: TButton
+    Left = 1200
+    Height = 31
+    Top = 440
+    Width = 94
+    Caption = 'ButtonRead'
+    OnClick = ButtonReadClick
+    TabOrder = 11
+  end
   object Label2: TLabel
-    Left = 350
+    Left = 568
     Height = 20
-    Top = 173
+    Top = 487
     Width = 44
     Caption = 'Label2'
     ParentColor = False
   end
+  object Button2: TButton
+    Left = 1208
+    Height = 31
+    Top = 479
+    Width = 94
+    Caption = 'Button2'
+    OnClick = Button2Click
+    TabOrder = 12
+  end
   object Label3: TLabel
-    Left = 259
+    Left = 569
     Height = 20
-    Top = 256
+    Top = 510
     Width = 44
     Caption = 'Label3'
     ParentColor = False
   end
-  object Label4: TLabel
-    Left = 351
-    Height = 20
-    Top = 250
-    Width = 44
-    Caption = 'Label4'
-    ParentColor = False
-  end
   object OpenPictureDialog1: TOpenPictureDialog
+    Top = 434
+  end
+  object SQLTransaction1: TSQLTransaction
+    Active = False
+    Database = mysql
+    Left = 40
+    Top = 434
+  end
+  object q1: TSQLQuery
+    FieldDefs = <>
+    Database = mysql
+    Transaction = SQLTransaction1
+    Params = <>
+    Left = 80
+    Top = 434
+  end
+  object mysql: TMySQL57Connection
+    Connected = False
+    LoginPrompt = False
+    DatabaseName = 'letter_db'
+    KeepConnection = False
+    Params.Strings = (
+      'Port=3306'
+    )
+    Transaction = SQLTransaction1
+    UserName = 'root'
+    HostName = 'localhost'
+    SkipLibraryVersionCheck = False
+    Left = 120
     Top = 434
   end
 end

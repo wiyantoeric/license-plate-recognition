@@ -5,30 +5,54 @@ unit main;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
-  ExtDlgs;
+  Classes, SysUtils, mysql56conn, mysql57conn, SQLDB, Forms, Controls, Graphics,
+  Dialogs, StdCtrls, ExtCtrls, ExtDlgs;
 
 type
 
   { TFormMain }
 
   TFormMain = class(TForm)
+    Button1: TButton;
+    Button2: TButton;
+    ButtonRead: TButton;
+    ButtonInsert: TButton;
+    ButtonAddLetter: TButton;
     ButtonLoad: TButton;
-    ButtonExtract: TButton;
+    ButtonRun: TButton;
+    EditLabel: TEdit;
     ImageInput: TImage;
     Label1: TLabel;
     Label2: TLabel;
+    Label3: TLabel;
     LabelOutput: TLabel;
+    Memo1: TMemo;
+    Memo2: TMemo;
+    Memo3: TMemo;
+    mysql: TMySQL57Connection;
     OpenPictureDialog1: TOpenPictureDialog;
     RadioBlack: TRadioButton;
     RadioWhite: TRadioButton;
-    procedure ButtonExtractClick(Sender: TObject);
+    q1: TSQLQuery;
+    SQLTransaction1: TSQLTransaction;
+    procedure Button1Click(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
+    procedure ButtonAddLetterClick(Sender: TObject);
+    procedure ButtonInsertClick(Sender: TObject);
+    procedure ButtonReadClick(Sender: TObject);
+    procedure ButtonRunClick(Sender: TObject);
     procedure ButtonLoadClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
 
     procedure Preprocessing();
     procedure Segmentasi();
     procedure SegmentasiHuruf();
+    procedure ConnectMySql();
+    procedure FetchFeatures();
+    procedure InsertFeature();
+    procedure CompareFeature();
+
+    procedure SegmentasiHurufAdd();
   private
 
   public
@@ -45,15 +69,16 @@ implementation
 { TFormMain }
 
 uses
-  windows;
+  windows, math;
 
 
 type
   Obj = Record
     Xpos, Ypos : Integer;
     Width, Height : Integer;
-    Population : Array[0..3,0..3] of Single;
-    PopSum : Single;
+    Feature : Array[0..24] of Double;
+    ObjLabel : String;
+    FeatureSum : Double;
   end;
 
 var
@@ -62,17 +87,26 @@ var
   ObjCount : Integer = 0;
   MainFeature : Single;
   MainObject : Obj;
+  MatrixCount : Integer = 5;
+  FetchedFeatureCount : Integer;
+  FetchedFeatures : Array[0..1000, 0..1000] of Double;
+  FetchedLabels : Array[0..1000] of String;
+  Result : String = '';
+
+  ObjFeatures : Array[0..1000, 0..1000] of Double;
 
 procedure TFormMain.FormCreate(Sender: TObject);
 begin
   LabelOutput.Visible := False;
-  ObjCount := 0;
 end;
 
 procedure TFormMain.ButtonLoadClick(Sender: TObject);
 var
   i, j, R, G, B : Integer;
-begin
+begin      
+  ObjCount := 0;
+  memo1.Clear;
+  memo2.clear;
   if (OpenPictureDialog1.Execute) then
   begin
     ImageInput.Picture.LoadFromFile(OpenPictureDialog1.FileName);
@@ -89,7 +123,6 @@ begin
       BmpGray[i,j] := (R + G + B) div 3;
     end;
   end;
-
 
   for i:=0 to ImageInput.Width-1 do
   begin
@@ -119,9 +152,50 @@ begin
 
 end;
 
-procedure TFormMain.ButtonExtractClick(Sender: TObject);
+procedure TFormMain.ButtonRunClick(Sender: TObject);
 begin
   Preprocessing();
+  Segmentasi();
+  SegmentasiHuruf();
+end;
+
+procedure TFormMain.ButtonInsertClick(Sender: TObject);
+var
+  i, j : Integer;
+  Count : Integer = 0;
+begin
+  insertfeature();
+end;
+
+procedure TFormMain.ButtonReadClick(Sender: TObject);
+begin
+  FetchFeatures();
+end;
+
+procedure TFormMain.ButtonAddLetterClick(Sender: TObject);
+begin
+  Preprocessing();
+  Segmentasi();
+  SegmentasiHurufAdd();
+end;
+
+procedure TFormMain.Button1Click(Sender: TObject);
+var
+  s : String;
+  f : Double;
+begin
+  s := EditLabel.Text;
+  f := strtofloat(S);
+
+  s := StringReplace(floattostr(f), ',', '.', []);
+
+  label1.caption := s;
+end;
+
+procedure TFormMain.Button2Click(Sender: TObject);
+begin
+  ButtonReadClick(nil);
+  CompareFeature();
 end;
 
 procedure TFormMain.Preprocessing();
@@ -134,6 +208,8 @@ begin
   begin
     for j:=0 to ImageInput.Height-1 do
     begin
+
+//      smoothing untuk mereduksi noise
       k:=0;
 
       for ki:=0 to 2 do
@@ -146,18 +222,28 @@ begin
 
       BmpTemp[i,j] := k;
 
-      if BmpTemp[i,j] > 127
-      then
-        BmpBiner[i,j] := 1
-      else
-        BmpBiner[i,j] := 0;
+//       binerisasi
+      if RadioWhite.Checked = True then
+      begin
+        if BmpTemp[i,j] > 127
+        then
+          BmpBiner[i,j] := 1
+        else
+          BmpBiner[i,j] := 0;
+      end else
+      begin
+//        jika background input = hitam maka object dan background di-inverse
+        if BmpTemp[i,j] > 127
+        then
+          BmpBiner[i,j] := 0
+        else
+          BmpBiner[i,j] := 1;
+      end;
+
 
       ImageInput.Canvas.Pixels[i,j] := RGB(BmpBiner[i,j]*255, BmpBiner[i,j]*255, BmpBiner[i,j]*255);
     end;
   end;
-
-  Segmentasi();
-  SegmentasiHuruf();
 end;
 
 procedure TFormMain.Segmentasi();
@@ -233,6 +319,12 @@ begin
     ObjectWidth := TepiKanan - TepiKiri;
     ObjectHeight := TepiBawah - TepiAtas;
 
+    //ImageInput.Canvas.MoveTo(TepiKiri, TepiAtas);
+    //ImageInput.Canvas.LineTo(TepiKanan, TepiAtas);
+    //ImageInput.Canvas.LineTo(TepiKanan, TepiBawah);
+    //ImageInput.Canvas.LineTo(TepiKiri, TepiBawah);
+    //ImageInput.Canvas.LineTo(TepiKiri, TepiAtas);
+
     MainObject.Xpos := TepiKiri;
     MainObject.Ypos := TepiAtas;
     MainObject.Width := ObjectWidth;
@@ -244,24 +336,19 @@ var
   i, j, obji, objj : Integer;
   TepiAtas, TepiBawah : Integer;
   BlackCount : Array[0..1000] of  Integer;
-
+  MatrixRow, MatrixCol, MatrixWidth, MatrixHeight : Integer;
+  BinaryCount : Integer;
+  FeatureIndex : Integer;
 label
-  LabelBawah, LabelEnd , LabelBawah2, LabelEnd2;
+  LabelBawah, LabelEnd;
 begin
-  for i := MainObject.Xpos to MainObject.Xpos + MainObject.Width do
+  for i := MainObject.Xpos - 1 to MainObject.Xpos + MainObject.Width + 1 do
   begin
     BlackCount[i] := 0;
 
     for j := MainObject.Ypos to MainObject.Ypos + MainObject.Height do
     begin
       if (BmpBiner[i,j] = 0) then Inc(BlackCount[i]);
-
-      //if BmpBiner[i-1,j] = 1 then
-      //begin
-        //Inc(ObjCount);
-        //Objects[ObjCount-1].Xpos := i;
-        //Objects[ObjCount-1].Ypos := j;
-      //end;
 
 //      awal object
       if (j = MainObject.Ypos + MainObject.Height) and (BlackCount[i] <> 0) and (BlackCount[i-1] = 0) then
@@ -311,27 +398,102 @@ begin
         Objects[ObjCount-1].Ypos := TepiAtas;
         Objects[ObjCount-1].Height := TepiBawah - TepiAtas;
       end;
+    end;
+  end;
 
-//      akhir object pada tepi kanan main object
-      if (i = MainObject.Xpos + MainObject.Width) and (j = MainObject.Ypos + MainObject.Height) and (BlackCount[i] <> 0) then
+  for i := 0 to ObjCount-1 do
+  begin
+    ImageInput.Canvas.Pen.Color := ClRed;
+
+    ImageInput.Canvas.MoveTo(Objects[i].Xpos, Objects[i].Ypos);
+    ImageInput.Canvas.LineTo(Objects[i].Xpos + Objects[i].Width, Objects[i].Ypos);
+    ImageInput.Canvas.LineTo(Objects[i].Xpos + Objects[i].Width, Objects[i].Ypos + Objects[i].Height);
+    ImageInput.Canvas.LineTo(Objects[i].Xpos, Objects[i].Ypos + Objects[i].Height);
+    ImageInput.Canvas.LineTo(Objects[i].Xpos, Objects[i].Ypos);
+
+    Objects[i].FeatureSum := 0;
+
+    MatrixWidth := Ceil(Objects[i].Width / MatrixCount);
+    MatrixHeight := Ceil(Objects[i].Height / MatrixCount);
+
+    for obji := 0 to MatrixCount-1 do
+    begin
+      for objj := 0 to MatrixCount-1 do
+      begin      
+        BinaryCount := 0;
+
+        for MatrixRow := 0 to MatrixWidth-1 do
+        begin
+          for MatrixCol := 0 to MatrixHeight-1 do
+          begin
+            if BmpBiner[Objects[i].Xpos + (obji*MatrixWidth) + MatrixRow, Objects[i].Ypos + (objj*MatrixHeight) + MatrixCol] = 0 then
+              Inc(BinaryCount);
+          end;
+        end;
+
+        FeatureIndex := obji*MatrixCount + objj;
+
+        Objects[i].Feature[FeatureIndex] := BinaryCount / (MatrixWidth * MatrixHeight);
+        Objects[i].FeatureSum += Objects[i].Feature[FeatureIndex];
+
+        ObjFeatures[i, FeatureIndex] := Objects[i].Feature[FeatureIndex];
+
+        memo1.lines.add(floattostr(Objects[i].Feature[FeatureIndex]));
+      end;
+    end;
+  end;
+end;
+
+
+procedure TFormMain.SegmentasiHurufAdd();
+var
+  i, j, obji, objj : Integer;
+  TepiAtas, TepiBawah : Integer;
+  BlackCount : Array[0..1000] of  Integer;
+  MatrixRow, MatrixCol, MatrixWidth, MatrixHeight : Integer;
+  BinaryCount : Integer;
+  FeatureIndex : Integer;
+label
+  LabelBawah, LabelEnd;
+begin
+  for i := MainObject.Xpos - 1 to MainObject.Xpos + MainObject.Width + 1 do
+  begin
+    BlackCount[i] := 0;
+
+    for j := MainObject.Ypos to MainObject.Ypos + MainObject.Height do
+    begin
+      if (BmpBiner[i,j] = 0) then Inc(BlackCount[i]);
+
+//      awal object
+      if (j = MainObject.Ypos + MainObject.Height) and (BlackCount[i] <> 0) and (BlackCount[i-1] = 0) then
+      begin
+        Inc(ObjCount);
+        Objects[ObjCount-1].Xpos := i;
+        Objects[ObjCount-1].Ypos := MainObject.Ypos;
+      end;
+      
+        Objects[ObjCount-1].ObjLabel := EditLabel.Text;
+
+//      akhir object
+      if (j = MainObject.Ypos + MainObject.Height) and (BlackCount[i] = 0) and (BlackCount[i-1] <> 0) then
       begin
         Objects[ObjCount-1].Width := i - Objects[ObjCount-1].Xpos;
         Objects[ObjCount-1].Height := MainObject.Height;
 
-        for obji := MainObject.Ypos to MainObject.Ypos + MainObject.Height do
+        for obji := MainObject.Ypos to MainObject.Ypos + Objects[ObjCount-1].Height do
         begin
           for objj := Objects[ObjCount-1].Xpos to Objects[ObjCount-1].Xpos + Objects[ObjCount-1].Width do
           begin
             if (BmpBiner[objj,obji] = 0) then
             begin
               TepiAtas := obji;
-              goto LabelBawah2;
+              goto LabelBawah;
             end;
           end;
         end;
 
-        LabelBawah2:
-        obji := Objects[ObjCount-1].Height + TepiAtas;
+        LabelBawah:
+        obji := MainObject.Ypos + MainObject.Height;
         while obji >= TepiAtas do
         begin
           objj := Objects[ObjCount-1].Xpos + Objects[ObjCount-1].Width;
@@ -340,14 +502,14 @@ begin
             if (BmpBiner[objj,obji] = 0) then
             begin
               TepiBawah := obji;
-              goto LabelEnd2;
+              goto LabelEnd;
             end;
             objj := objj-1;
           end;
           obji := obji-1;
         end;
 
-        LabelEnd2:
+        LabelEnd:
 
         Objects[ObjCount-1].Ypos := TepiAtas;
         Objects[ObjCount-1].Height := TepiBawah - TepiAtas;
@@ -364,8 +526,182 @@ begin
     ImageInput.Canvas.LineTo(Objects[i].Xpos + Objects[i].Width, Objects[i].Ypos + Objects[i].Height);
     ImageInput.Canvas.LineTo(Objects[i].Xpos, Objects[i].Ypos + Objects[i].Height);
     ImageInput.Canvas.LineTo(Objects[i].Xpos, Objects[i].Ypos);
+
+    Objects[i].FeatureSum := 0;
+
+    MatrixWidth := Ceil(Objects[i].Width / MatrixCount);
+    MatrixHeight := Ceil(Objects[i].Height / MatrixCount);
+
+    for obji := 0 to MatrixCount-1 do
+    begin
+      for objj := 0 to MatrixCount-1 do
+      begin
+        BinaryCount := 0;
+
+        for MatrixRow := 0 to MatrixWidth-1 do
+        begin
+          for MatrixCol := 0 to MatrixHeight-1 do
+          begin
+            if BmpBiner[Objects[i].Xpos + (obji*MatrixWidth) + MatrixRow, Objects[i].Ypos + (objj*MatrixHeight) + MatrixCol] = 0 then
+              Inc(BinaryCount);
+          end;
+        end;
+
+        FeatureIndex := obji*MatrixCount + objj;
+
+        Objects[i].Feature[FeatureIndex] := BinaryCount / (MatrixWidth * MatrixHeight);
+        Objects[i].FeatureSum += Objects[i].Feature[FeatureIndex];
+
+        ObjFeatures[i, FeatureIndex] := Objects[i].Feature[FeatureIndex];
+
+        memo1.lines.add(floattostr(Objects[i].Feature[FeatureIndex]));
+      end;
+    end;
   end;
 end;
 
-end.
+procedure TFormMain.ConnectMySql();
+begin
+  mysql.Connected := True;
+end;
 
+procedure TFormMain.FetchFeatures();
+var
+  i, j : Integer;
+  Count : Integer = 0;
+begin          
+  q1.Close;
+
+  mysql.connected := true;
+  try
+    mysql.Open;
+    label1.caption := 'Connection to MySQL database "world" = OK!';
+  except
+    on E: ESQLDatabaseError do
+      label1.caption := 'Connection to MySQL database "world" FAILED!';
+  end;
+
+  q1.sql.text := 'select * from letter';
+  q1.open;
+
+  while not q1.EOF do
+  begin
+    FetchedLabels[Count] := q1.Fields[0].AsString;
+
+    for i := 0 to MatrixCount * MatrixCount -1 do
+    begin
+//      fields[ i + 1 ] : karena index pertama adalah label
+      FetchedFeatures[Count, i] := q1.Fields[i+1].AsFloat;
+      memo2.lines.add(floattostr(FetchedFeatures[Count, i]));
+    end;
+
+    Inc(Count);
+    q1.Next;
+  end;
+
+  FetchedFeatureCount := Count;
+  label2.caption := inttostr(count);
+  q1.Close;
+end;
+
+procedure TFormMain.InsertFeature();
+var
+  i, j : Integer;
+  query : String;
+  Count : Integer = 0;
+begin
+  mysql.connected := true;
+
+  try
+    mysql.Open;
+    label1.caption := 'Connection to MySQL database "world" = OK!';
+  except
+    on E: ESQLDatabaseError do
+      label1.caption := 'Connection to MySQL database "world" FAILED!';
+  end;
+
+  query := 'insert into letter (label, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25) ';
+  query += 'values (';
+
+  for i := 0 to ObjCount-1 do
+  begin
+  query += '"' + Objects[i].ObjLabel + '"';
+
+    for j := 0 to MatrixCount * MatrixCount - 1 do
+    begin
+      query += ',"';
+      query += StringReplace(FloatToStr(Objects[i].Feature[j]), ',', '.', []);
+
+      if i <> MatrixCount * MatrixCount - 1 then query += '"';
+    end;
+  end;
+
+  query += ')';
+    
+  q1.Close;
+
+  try
+    q1.sql.text := query;
+  except
+    on E: ESQLDatabaseError do
+      label1.caption := E.Message;
+  end;
+
+  try
+    q1.ExecSql;
+    SQLTransaction1.CommitRetaining;
+  except
+    on E: ESQLDatabaseError do
+      label1.caption := E.Message;
+  end;
+
+  q1.Close;
+end;
+
+procedure TFormMain.CompareFeature();
+var
+  i, j, k : Integer;
+  Res : Array[0..1000] of Double;
+  MinRes : Double;
+  MinResIndex : Integer;
+begin
+  memo1.clear;
+  for i := 0 to ObjCount-1 do
+  begin
+
+    for j := 0 to FetchedFeatureCount-1 do
+    begin                  
+      Res[j] := 0;
+      MinRes := 100;
+
+      for k := 0 to MatrixCount * MatrixCount - 1 do
+      begin
+        Res[j] += Abs(Objects[i].Feature[k] - FetchedFeatures[j,k]);
+        if MinRes > Res[j] then
+        begin
+          MinRes := Res[j];
+          MinResIndex := j;
+        end;     
+        memo1.lines.add(floattostr(Res[j]));
+      end;
+
+      Objects[i].ObjLabel := FetchedLabels[MinResIndex];
+      memo3.Lines.add(floattostr(res[j]));
+      memo2.lines.add(inttostr(j));
+                                                     
+      label1.caption := inttostr(MinResIndex);
+      label2.caption := floattostr(Res[MinResIndex]);
+      label3.caption := inttostr(fetchedFeaturecount);
+      //label3.caption := floattostr(trunc(MinRes*100)/100);
+    end;
+
+    memo1.lines.add(Objects[i].ObjLabel);
+
+    Result += Objects[i].ObjLabel;
+  end;
+  LabelOutput.Caption := Result;
+  LabelOutput.Visible := True;
+end;
+
+end.
+// feature blm dibuat per item, id blm diset, label blm ad,
