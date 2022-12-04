@@ -15,6 +15,7 @@ type
   TFormMain = class(TForm)
     Button1: TButton;
     Button2: TButton;
+    Button3: TButton;
     ButtonRead: TButton;
     ButtonInsert: TButton;
     ButtonAddLetter: TButton;
@@ -37,6 +38,7 @@ type
     SQLTransaction1: TSQLTransaction;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
+    procedure Button3Click(Sender: TObject);
     procedure ButtonAddLetterClick(Sender: TObject);
     procedure ButtonInsertClick(Sender: TObject);
     procedure ButtonReadClick(Sender: TObject);
@@ -194,8 +196,16 @@ end;
 
 procedure TFormMain.Button2Click(Sender: TObject);
 begin
+  ButtonRunClick(nil);
   ButtonReadClick(nil);
   CompareFeature();
+end;
+
+procedure TFormMain.Button3Click(Sender: TObject);
+begin
+  label1.caption := editlabel.Text[1];
+  label2.caption := editlabel.Text[2];
+  label3.caption := editlabel.Text[3];
 end;
 
 procedure TFormMain.Preprocessing();
@@ -444,7 +454,6 @@ begin
   end;
 end;
 
-
 procedure TFormMain.SegmentasiHurufAdd();
 var
   i, j, obji, objj : Integer;
@@ -471,8 +480,6 @@ begin
         Objects[ObjCount-1].Xpos := i;
         Objects[ObjCount-1].Ypos := MainObject.Ypos;
       end;
-      
-        Objects[ObjCount-1].ObjLabel := EditLabel.Text;
 
 //      akhir object
       if (j = MainObject.Ypos + MainObject.Height) and (BlackCount[i] = 0) and (BlackCount[i-1] <> 0) then
@@ -587,6 +594,7 @@ begin
   while not q1.EOF do
   begin
     FetchedLabels[Count] := q1.Fields[0].AsString;
+    memo1.lines.add(FetchedLabels[Count]);
 
     for i := 0 to MatrixCount * MatrixCount -1 do
     begin
@@ -620,12 +628,12 @@ begin
       label1.caption := 'Connection to MySQL database "world" FAILED!';
   end;
 
-  query := 'insert into letter (label, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25) ';
-  query += 'values (';
-
   for i := 0 to ObjCount-1 do
-  begin
-  query += '"' + Objects[i].ObjLabel + '"';
+  begin               
+    query := 'insert into letter (label, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25) ';
+    query += 'values (';
+
+    query += '"' + EditLabel.Text[i+1] + '"';
 
     for j := 0 to MatrixCount * MatrixCount - 1 do
     begin
@@ -633,27 +641,28 @@ begin
       query += StringReplace(FloatToStr(Objects[i].Feature[j]), ',', '.', []);
 
       if i <> MatrixCount * MatrixCount - 1 then query += '"';
+    end;  
+
+    query += ')';
+
+    q1.Close;
+
+    try
+      q1.sql.text := query;
+    except
+      on E: ESQLDatabaseError do
+        label1.caption := E.Message;
+    end;
+
+    try
+      q1.ExecSql;
+      SQLTransaction1.CommitRetaining;
+    except
+      on E: ESQLDatabaseError do
+        label1.caption := E.Message;
     end;
   end;
 
-  query += ')';
-    
-  q1.Close;
-
-  try
-    q1.sql.text := query;
-  except
-    on E: ESQLDatabaseError do
-      label1.caption := E.Message;
-  end;
-
-  try
-    q1.ExecSql;
-    SQLTransaction1.CommitRetaining;
-  except
-    on E: ESQLDatabaseError do
-      label1.caption := E.Message;
-  end;
 
   q1.Close;
 end;
@@ -661,45 +670,51 @@ end;
 procedure TFormMain.CompareFeature();
 var
   i, j, k : Integer;
-  Res : Array[0..1000] of Double;
-  MinRes : Double;
+  Res, MinRes : Array[0..1000] of Double;
   MinResIndex : Integer;
 begin
   memo1.clear;
+  memo2.clear;
+  memo3.clear;
+
   for i := 0 to ObjCount-1 do
   begin
 
     for j := 0 to FetchedFeatureCount-1 do
     begin                  
       Res[j] := 0;
-      MinRes := 100;
 
       for k := 0 to MatrixCount * MatrixCount - 1 do
       begin
         Res[j] += Abs(Objects[i].Feature[k] - FetchedFeatures[j,k]);
-        if MinRes > Res[j] then
-        begin
-          MinRes := Res[j];
-          MinResIndex := j;
-        end;     
-        memo1.lines.add(floattostr(Res[j]));
       end;
-
-      Objects[i].ObjLabel := FetchedLabels[MinResIndex];
-      memo3.Lines.add(floattostr(res[j]));
-      memo2.lines.add(inttostr(j));
-                                                     
-      label1.caption := inttostr(MinResIndex);
-      label2.caption := floattostr(Res[MinResIndex]);
-      label3.caption := inttostr(fetchedFeaturecount);
+      //memo3.Lines.add(floattostr(res[j]));
+      //memo2.lines.add(inttostr(j));
+      //                                               
+      //label1.caption := inttostr(MinResIndex);
+      //label2.caption := floattostr(Res[MinResIndex]);
+      //label3.caption := inttostr(fetchedFeaturecount);
       //label3.caption := floattostr(trunc(MinRes*100)/100);
     end;
 
-    memo1.lines.add(Objects[i].ObjLabel);
+    for j := 0 to FetchedFeatureCount-1 do
+    begin   
+      MinRes[i] := 100;
 
+      if MinRes[i] > Res[j] then
+      begin
+        MinRes[i] := Res[j];
+        MinResIndex := j;                    
+      memo2.lines.add(inttostr(j) + ' : ' + floattostr(MinRes[i]));
+      end;
+    end;
+
+    Objects[i].ObjLabel := FetchedLabels[MinResIndex];    
+    memo1.lines.add(Objects[i].ObjLabel);
     Result += Objects[i].ObjLabel;
+
   end;
-  LabelOutput.Text := Result;
+  LabelOutput.Caption := Result;
   LabelOutput.Visible := True;
 end;
 
