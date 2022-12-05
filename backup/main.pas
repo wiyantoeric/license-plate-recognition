@@ -594,13 +594,11 @@ begin
   while not q1.EOF do
   begin
     FetchedLabels[Count] := q1.Fields[0].AsString;
-    memo1.lines.add(FetchedLabels[Count]);
 
     for i := 0 to MatrixCount * MatrixCount -1 do
     begin
 //      fields[ i + 1 ] : karena index pertama adalah label
       FetchedFeatures[Count, i] := q1.Fields[i+1].AsFloat;
-      memo2.lines.add(floattostr(FetchedFeatures[Count, i]));
     end;
 
     Inc(Count);
@@ -608,7 +606,6 @@ begin
   end;
 
   FetchedFeatureCount := Count;
-  label2.caption := inttostr(count);
   q1.Close;
 end;
 
@@ -696,16 +693,17 @@ begin
       //label3.caption := inttostr(fetchedFeaturecount);
       //label3.caption := floattostr(trunc(MinRes*100)/100);
     end;
+    
+    MinRes[i] := 100;
 
     for j := 0 to FetchedFeatureCount-1 do
-    begin   
-      MinRes[i] := 100;
+    begin
 
-      if MinRes[i] > Res[j] then
+      if Res[j] < MinRes [i] then
       begin
         MinRes[i] := Res[j];
         MinResIndex := j;                    
-      memo2.lines.add(inttostr(j) + ' : ' + floattostr(MinRes[i]));
+        memo2.lines.add(inttostr(j) + ' : ' + floattostr(MinRes[i]));
       end;
     end;
 
