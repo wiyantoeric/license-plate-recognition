@@ -15,7 +15,6 @@ type
   TFormMain = class(TForm)
     Button1: TButton;
     Button2: TButton;
-    Button3: TButton;
     ButtonRead: TButton;
     ButtonInsert: TButton;
     ButtonLoad: TButton;
@@ -158,12 +157,13 @@ begin
   Preprocessing();
   Segmentasi();
   SegmentasiHuruf();
+  FetchFeatures();
+  CompareFeature();
 end;
 
 procedure TFormMain.ButtonInsertClick(Sender: TObject);
 var
   i, j : Integer;
-  Count : Integer = 0;
 begin
   ButtonRunClick(nil);
   insertfeature();
@@ -709,15 +709,15 @@ begin
     end;
                             
     if MinRes[i] > kVal then
-      Objects[i].ObjLabel := Undetected
+    begin
+      Objects[i].ObjLabel := Undetected;
+      memo1.lines.add(Objects[i].ObjLabel);
+    end
     else
     begin
-      Objects[i].ObjLabel := FetchedLabels[MinResIndex];
+      Objects[i].ObjLabel := FetchedLabels[MinResIndex]; 
+      Result += Objects[i].ObjLabel;
     end;
-
-    memo1.lines.add(Objects[i].ObjLabel);
-
-    Result += Objects[i].ObjLabel;
   end;
 
   LabelOutput.Caption := Result;
