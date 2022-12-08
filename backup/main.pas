@@ -18,7 +18,6 @@ type
     Button3: TButton;
     ButtonRead: TButton;
     ButtonInsert: TButton;
-    ButtonAddLetter: TButton;
     ButtonLoad: TButton;
     ButtonRun: TButton;
     EditLabel: TEdit;
@@ -73,7 +72,6 @@ implementation
 uses
   windows, math;
 
-
 type
   Obj = Record
     Xpos, Ypos : Integer;
@@ -94,6 +92,7 @@ var
   FetchedFeatures : Array[0..1000, 0..1000] of Double;
   FetchedLabels : Array[0..1000] of String;
   Result : String = '';
+  kVal : Integer = 5;
 
   ObjFeatures : Array[0..1000, 0..1000] of Double;
 
@@ -166,6 +165,7 @@ var
   i, j : Integer;
   Count : Integer = 0;
 begin
+  ButtonRunClick(nil);
   insertfeature();
 end;
 
@@ -669,6 +669,7 @@ var
   i, j, k : Integer;
   Res, MinRes : Array[0..1000] of Double;
   MinResIndex : Integer;
+  Undetected : String = 'not-found';
 begin
   memo1.clear;
   memo2.clear;
@@ -699,19 +700,26 @@ begin
     for j := 0 to FetchedFeatureCount-1 do
     begin
 
-      if Res[j] < MinRes [i] then
+      if Res[j] < MinRes[i] then
       begin
         MinRes[i] := Res[j];
         MinResIndex := j;                    
         memo2.lines.add(inttostr(j) + ' : ' + floattostr(MinRes[i]));
       end;
     end;
+                            
+    if MinRes[i] < kVal then
+      Objects[i].ObjLabel := Undetected
+    else
+    begin
+      Objects[i].ObjLabel := FetchedLabels[MinResIndex];
+    end;
 
-    Objects[i].ObjLabel := FetchedLabels[MinResIndex];    
     memo1.lines.add(Objects[i].ObjLabel);
-    Result += Objects[i].ObjLabel;
 
+    Result += Objects[i].ObjLabel;
   end;
+
   LabelOutput.Caption := Result;
   LabelOutput.Visible := True;
 end;

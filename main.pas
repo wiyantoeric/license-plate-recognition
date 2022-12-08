@@ -72,7 +72,6 @@ implementation
 uses
   windows, math;
 
-
 type
   Obj = Record
     Xpos, Ypos : Integer;
@@ -93,6 +92,7 @@ var
   FetchedFeatures : Array[0..1000, 0..1000] of Double;
   FetchedLabels : Array[0..1000] of String;
   Result : String = '';
+  kVal : Integer = 5;
 
   ObjFeatures : Array[0..1000, 0..1000] of Double;
 
@@ -669,6 +669,7 @@ var
   i, j, k : Integer;
   Res, MinRes : Array[0..1000] of Double;
   MinResIndex : Integer;
+  Undetected : String = 'not-found';
 begin
   memo1.clear;
   memo2.clear;
@@ -706,12 +707,19 @@ begin
         memo2.lines.add(inttostr(j) + ' : ' + floattostr(MinRes[i]));
       end;
     end;
+                            
+    if MinRes[i] > kVal then
+      Objects[i].ObjLabel := Undetected
+    else
+    begin
+      Objects[i].ObjLabel := FetchedLabels[MinResIndex];
+    end;
 
-    Objects[i].ObjLabel := FetchedLabels[MinResIndex];    
     memo1.lines.add(Objects[i].ObjLabel);
-    Result += Objects[i].ObjLabel;
 
+    Result += Objects[i].ObjLabel;
   end;
+
   LabelOutput.Caption := Result;
   LabelOutput.Visible := True;
 end;
