@@ -21,8 +21,8 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <IsVisibleTab Value="True"/>
-        <TopLine Value="446"/>
-        <CursorPos X="88" Y="463"/>
+        <TopLine Value="448"/>
+        <CursorPos X="8" Y="462"/>
         <FoldState Value=" T0na6b0"/>
         <UsageCount Value="51"/>
         <Loaded Value="True"/>
@@ -156,7 +156,7 @@
       </Position29>
       <Position30>
         <Filename Value="main.pas"/>
-        <Caret Line="463" Column="24" TopLine="447"/>
+        <Caret Line="463" Column="88" TopLine="446"/>
       </Position30>
     </JumpHistory>
     <RunParams>

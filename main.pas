@@ -15,6 +15,7 @@ type
   TFormMain = class(TForm)
     ButtonLoad: TButton;
     ButtonRun: TButton;
+    GroupBox1: TGroupBox;
     ImageInput: TImage;
     LabelOutput: TLabel;
     mysql: TMySQL57Connection;
@@ -460,14 +461,10 @@ begin
 
   if UndetectedCount > 0 then
   begin
-
     Result += (LineEnding + 'Not detected : ' + IntToStr(UndetectedCount));
-
   end;
                                 
   LabelOutput.Caption := Result;
-
-
 end;
 
 end.

@@ -456,13 +456,14 @@ begin
     end;
   end;
 
-  LabelOutput.Caption := Result;
   LabelOutput.Visible := True;
 
   if UndetectedCount > 0 then
-    LabelOutput.Caption += (LineEnding + 'Not detected : ' + IntToStr(UndetectedCount));
-
-
+  begin
+    Result += (LineEnding + 'Not detected : ' + IntToStr(UndetectedCount));
+  end;
+                                
+  LabelOutput.Caption := Result;
 end;
 
 end.
