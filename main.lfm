@@ -1,11 +1,11 @@
 object FormMain: TFormMain
   Left = 444
-  Height = 361
+  Height = 389
   Top = 144
-  Width = 928
+  Width = 842
   Caption = 'Pengenalan Plat Nomor Kendaraan'
-  ClientHeight = 361
-  ClientWidth = 928
+  ClientHeight = 389
+  ClientWidth = 842
   DesignTimePPI = 120
   OnCreate = FormCreate
   LCLVersion = '2.0.12.0'
@@ -71,13 +71,13 @@ object FormMain: TFormMain
     end
   end
   object OpenPictureDialog1: TOpenPictureDialog
-    Top = 434
+    Top = 320
   end
   object SQLTransaction1: TSQLTransaction
     Active = False
     Database = mysql
     Left = 40
-    Top = 434
+    Top = 320
   end
   object q1: TSQLQuery
     FieldDefs = <>
@@ -85,7 +85,7 @@ object FormMain: TFormMain
     Transaction = SQLTransaction1
     Params = <>
     Left = 80
-    Top = 434
+    Top = 320
   end
   object mysql: TMySQL57Connection
     Connected = False
@@ -101,6 +101,6 @@ object FormMain: TFormMain
     HostName = 'localhost'
     SkipLibraryVersionCheck = False
     Left = 120
-    Top = 434
+    Top = 320
   end
 end

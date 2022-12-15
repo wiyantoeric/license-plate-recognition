@@ -90,6 +90,7 @@ begin
              
   LabelOutput.Caption := '';
 
+//  pengambilan data RGB pada tiap piksel serta grayscaling
   for i:=0 to ImageInput.Width-1 do
   begin
     for j:=0 to ImageInput.Height-1 do
@@ -102,6 +103,7 @@ begin
     end;
   end;
 
+//  pengisian tepian pada bitmap grayscale
   for i:=0 to ImageInput.Width-1 do
   begin
     for j:=0 to ImageInput.Height-1 do
@@ -189,10 +191,10 @@ procedure TFormMain.Segmentasi();
 var
   i, j : Integer;
   TepiAtas, TepiBawah, TepiKiri, TepiKanan, ObjectWidth, ObjectHeight : Integer;
-
 label
-  LabelAtas, LabelKanan, LabelBawah, LabelDraw;
+  LabelAtas, LabelKanan, LabelBawah, LabelEnd;
 begin
+//  pencarian tepi kiri dari seluruh huruf
     for i:=0 to ImageInput.Width-1 do
     begin
       for j:=0 to ImageInput.Height-1 do
@@ -246,14 +248,14 @@ begin
         if (BmpBiner[j,i] = 0) then
         begin
           TepiBawah := i;
-          goto LabelDraw;
+          goto LabelEnd;
         end;
         j := j-1;
       end;
       i := i-1;
     end;
 
-    LabelDraw:
+    LabelEnd:
 
     ObjectWidth := TepiKanan - TepiKiri;
     ObjectHeight := TepiBawah - TepiAtas;
@@ -275,8 +277,10 @@ var
 label
   LabelBawah, LabelEnd;
 begin
+//  segmentasi tiap huruf pada segmen main object
   for i := MainObject.Xpos - 1 to MainObject.Xpos + MainObject.Width + 1 do
   begin
+//    penentuan awal dan akhir melalui piksel object (0) pada tiap kolom bitmap main object
     BlackCount[i] := 0;
 
     for j := MainObject.Ypos to MainObject.Ypos + MainObject.Height do
@@ -309,6 +313,7 @@ begin
           end;
         end;
 
+//        deteksi tepi bawah
         LabelBawah:
         obji := MainObject.Ypos + MainObject.Height;
         while obji >= TepiAtas do
@@ -368,6 +373,7 @@ begin
 
         FeatureIndex := obji*MatrixCount + objj;
 
+//        kalkulasi fitur dan assignment fitur ke dalam array
         Objects[i].Feature[FeatureIndex] := BinaryCount / (MatrixWidth * MatrixHeight);
         Objects[i].FeatureSum += Objects[i].Feature[FeatureIndex];
 
@@ -395,13 +401,14 @@ begin
   q1.Sql.Text := 'select * from letter';
   q1.Open;
 
+//  pengambilan data pada database pada tiap row yang telah di-fetch
   while not q1.EOF do
   begin
     FetchedLabels[Count] := q1.Fields[0].AsString;
 
     for i := 0 to MatrixCount * MatrixCount -1 do
     begin
-//      fields[ i + 1 ] : karena index pertama adalah label
+//      fields[ i + 1 ] : karena index pertama (0) adalah label
       FetchedFeatures[Count, i] := q1.Fields[i+1].AsFloat;
     end;
 
@@ -422,6 +429,7 @@ var
   UndetectedCount : Integer = 0;
   Result : String = '';
 begin
+//  komparasi tiap fitur pada tiap object terhadap semua fitur yang diambil dari database
   for i := 0 to ObjCount-1 do
   begin
     for j := 0 to FetchedFeatureCount-1 do
@@ -436,6 +444,7 @@ begin
     
     MinRes[i] := 100;
 
+//    pencarian nilai minimum dari jarak
     for j := 0 to FetchedFeatureCount-1 do
     begin
       if Res[j] < MinRes[i] then
@@ -444,7 +453,9 @@ begin
         MinResIndex := j;
       end;
     end;
-                            
+
+//    penentuan object dengan k = 7                                                     
+//    nilai jarak yang tidak sesuai dengan k value maka object dinyatakan tidak terdeteksi
     if MinRes[i] > kVal then
     begin
       Objects[i].ObjLabel := Undetected;

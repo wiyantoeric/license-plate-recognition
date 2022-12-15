@@ -1,11 +1,11 @@
 object FormMain: TFormMain
   Left = 444
-  Height = 361
+  Height = 389
   Top = 144
-  Width = 928
+  Width = 842
   Caption = 'Pengenalan Plat Nomor Kendaraan'
-  ClientHeight = 361
-  ClientWidth = 928
+  ClientHeight = 389
+  ClientWidth = 842
   DesignTimePPI = 120
   OnCreate = FormCreate
   LCLVersion = '2.0.12.0'
@@ -28,7 +28,7 @@ object FormMain: TFormMain
     TabOrder = 1
   end
   object ImageInput: TImage
-    Left = 168
+    Left = 176
     Height = 113
     Top = 32
     Width = 113
@@ -37,37 +37,47 @@ object FormMain: TFormMain
   object LabelOutput: TLabel
     Left = 40
     Height = 20
-    Top = 224
+    Top = 256
     Width = 82
     Caption = 'LabelOutput'
     ParentColor = False
   end
-  object RadioWhite: TRadioButton
+  object GroupBox1: TGroupBox
     Left = 40
-    Height = 24
-    Top = 176
-    Width = 63
-    Caption = 'White'
+    Height = 106
+    Top = 128
+    Width = 103
+    Caption = 'Background'
+    ClientHeight = 81
+    ClientWidth = 99
     TabOrder = 2
-  end
-  object RadioBlack: TRadioButton
-    Left = 40
-    Height = 24
-    Top = 144
-    Width = 59
-    Caption = 'Black'
-    Checked = True
-    TabOrder = 3
-    TabStop = True
+    object RadioWhite: TRadioButton
+      Left = 8
+      Height = 24
+      Top = 48
+      Width = 63
+      Caption = 'White'
+      TabOrder = 0
+    end
+    object RadioBlack: TRadioButton
+      Left = 8
+      Height = 24
+      Top = 16
+      Width = 59
+      Caption = 'Black'
+      Checked = True
+      TabOrder = 1
+      TabStop = True
+    end
   end
   object OpenPictureDialog1: TOpenPictureDialog
-    Top = 434
+    Top = 320
   end
   object SQLTransaction1: TSQLTransaction
     Active = False
     Database = mysql
     Left = 40
-    Top = 434
+    Top = 320
   end
   object q1: TSQLQuery
     FieldDefs = <>
@@ -75,12 +85,12 @@ object FormMain: TFormMain
     Transaction = SQLTransaction1
     Params = <>
     Left = 80
-    Top = 434
+    Top = 320
   end
   object mysql: TMySQL57Connection
     Connected = False
     LoginPrompt = False
-    DatabaseName = 'letter_db'
+    DatabaseName = 'letter_db1'
     KeepConnection = False
     Params.Strings = (
       'Port=3306'
@@ -91,6 +101,6 @@ object FormMain: TFormMain
     HostName = 'localhost'
     SkipLibraryVersionCheck = False
     Left = 120
-    Top = 434
+    Top = 320
   end
 end
